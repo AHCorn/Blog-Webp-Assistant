@@ -110,7 +110,7 @@ def find_markdown_files(folder_path):
 
 def show_introduction():
     """脚本介绍"""
-    print(f"\n{Fore.CYAN}=== Blog Webp Converter v{VERSION} ==={Style.RESET_ALL}")
+    print(f"\n{Fore.CYAN}=== Blog-Webp-Assistant v{VERSION} ==={Style.RESET_ALL}")
     print(f"作者：{AUTHOR}")
     print(f"项目地址：{PROJECT_URL}\n")
 
@@ -153,7 +153,7 @@ def show_introduction():
 
 def show_menu():
     """显示主菜单"""
-    print(f"\n{Fore.CYAN}=== Blog Webp Converter v{VERSION} ==={Style.RESET_ALL}")
+    print(f"\n{Fore.CYAN}=== Blog-Webp-Assistant v{VERSION} ==={Style.RESET_ALL}")
     print(f"作者：{AUTHOR}")
     print(f"项目地址：{PROJECT_URL}\n")
     print("1. 转换图片为 Webp 格式")
@@ -247,14 +247,21 @@ def replace_image_references(markdown_path, need_confirm=True):
                                     print(f"\n处理文件: {markdown_path}")
                                     print(f"在YAML中发现图片引用: {img_path}")
                                     print(f"可替换为: {webp_path}")
-                                    if not need_confirm or input("是否替换？(y/n/gg，默认n): ").strip().lower() == 'y':
-                                        # 直接在原始content中替换扩展名
+                                    if need_confirm:
+                                        response = input("是否替换？(y/n/gg，默认n): ").strip().lower()
+                                        if response == 'gg':
+                                            need_confirm = False
+                                            content = content.replace(img_path, webp_path)
+                                            yaml_changed = True
+                                            print(f"{Fore.YELLOW}切换到自动替换模式{Style.RESET_ALL}")
+                                        elif response == 'y':
+                                            content = content.replace(img_path, webp_path)
+                                            yaml_changed = True
+                                    else:
+                                        # 自动批处理模式，直接替换
                                         content = content.replace(img_path, webp_path)
                                         yaml_changed = True
-                                    elif input("是否替换？(y/n/gg，默认n): ").strip().lower() == 'gg':
-                                        need_confirm = False
-                                        content = content.replace(img_path, webp_path)
-                                        yaml_changed = True
+                                        print(f"{Fore.GREEN}已自动替换{Style.RESET_ALL}")
             except yaml.YAMLError:
                 print(f"处理 {markdown_path} 的YAML数据时出错")
         else:
@@ -436,6 +443,10 @@ def replace_image_references(markdown_path, need_confirm=True):
                                 print(f"{Fore.YELLOW}切换到自动替换模式{Style.RESET_ALL}")
                             elif response == 'y':
                                 content = content.replace(old, new)
+                        else:
+                            # 自动批处理模式，直接替换
+                            content = content.replace(old, new)
+                            print(f"{Fore.GREEN}已自动替换{Style.RESET_ALL}")
             
             return content, bool(replacements)
 
@@ -579,9 +590,11 @@ def process_markdown(folder_path):
 
     print(f"\n找到 {len(markdown_files)} 个Markdown文件")
     
-    # 保险
+    # 询问是否需要逐个确认替换
     need_confirm = input("\n是否需要逐个确认替换？(y/n): ").strip().lower() == 'y'
-    if not need_confirm:
+    if need_confirm:
+        print("\n将逐个确认替换")
+    else:
         print("\n将自动替换所有可替换的图片引用")
     
     updated_count = 0
